@@ -54,27 +54,21 @@ namespace TestingQuest_18jule
 
         public void RemoveEmployee(int id)
         {
-            Employee employeeToRemove = null;
-            foreach (Employee emp in employeesList)
+            LinkedListNode<Employee> node = employeesList.First;
+            while (node != null)
             {
-                if (emp.Id == id)
+                if (node.Value.Id == id)
                 {
-                    employeeToRemove = emp;
-                    break;
+                    employeesList.Remove(node);
+                    SaveEmployeesToFile();
+                    Console.WriteLine($"Сотрудник с ID - {id} успешно удалён!");
+                    return;
                 }
+                node = node.Next;
             }
-
-            if (employeeToRemove != null)
-            {
-                employeesList.Remove(employeeToRemove);
-                SaveEmployeesToFile();
-                Console.WriteLine($"Сотрудник с ID - {id} успешно удалён!");
-            }
-            else
-            {
-                Console.WriteLine($"Сотрудник с ID - {id} не найден.");
-            }
+            Console.WriteLine($"Сотрудник с ID - {id} не найден.");
         }
+
 
         public Employee GetEmployee(int id)
         {
