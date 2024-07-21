@@ -7,31 +7,40 @@ using Newtonsoft.Json;
 
 namespace TestingQuest_18jule
 {
-    internal class EmployeeManager
+    public class EmployeeManager
     {
         public LinkedList<Employee> employeesList;
 
-        EmployeeManager()
+        public EmployeeManager()
         {
             employeesList = new LinkedList<Employee>();
-            //ExistJsonDb();
+            LoadEmployeesFromFile();
         }
 
-
-        /*private void ExistJsonDb()
+        private void LoadEmployeesFromFile()
         {
-            string filePath = @"\JsonDB\EmployeeDataBase.json";
-            if (!File.Exists(filePath))
+            string filePath = @"JsonDB\EmployeeDataBase.json";
+            if (File.Exists(filePath))
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(filePath) ?? string.Empty);
-                File.Create(filePath).Close();
+                string jsonString = File.ReadAllText(filePath);
+                var employees = JsonConvert.DeserializeObject<LinkedList<Employee>>(jsonString);
+                if (employees != null)
+                {
+                    employeesList = employees;
+                }
             }
-            string jsonString = JsonConvert.SerializeObject(employeesList);
-        }*/
+        }
 
         private void SaveEmployeesToFile()
         {
             string filePath = @"JsonDB\EmployeeDataBase.json";
+            string directoryPath = Path.GetDirectoryName(filePath);
+
+            if (!Directory.Exists(directoryPath))
+            {
+                Directory.CreateDirectory(directoryPath);
+            }
+
             string jsonString = JsonConvert.SerializeObject(employeesList);
             File.WriteAllText(filePath, jsonString);
         }
@@ -40,38 +49,104 @@ namespace TestingQuest_18jule
         {
             employeesList.AddLast(employee);
             SaveEmployeesToFile();
+            Console.WriteLine($"Сотрудник {employee.FirstName} {employee.LastName} добавлен.");
         }
 
         public void RemoveEmployee(int id)
         {
+            Employee employeeToRemove = null;
             foreach (Employee emp in employeesList)
             {
-                if(emp.Id == id)
+                if (emp.Id == id)
                 {
-                    employeesList.Remove(emp);
-                    Console.WriteLine($"Пользователь с ID - {id} успешно удалён!");
-                }
-                else
-                {
-                    Console.WriteLine($"Пользователя с ID - {id} не существует");
+                    employeeToRemove = emp;
+                    break;
                 }
             }
-            SaveEmployeesToFile();
+
+            if (employeeToRemove != null)
+            {
+                employeesList.Remove(employeeToRemove);
+                SaveEmployeesToFile();
+                Console.WriteLine($"Сотрудник с ID - {id} успешно удалён!");
+            }
+            else
+            {
+                Console.WriteLine($"Сотрудник с ID - {id} не найден.");
+            }
         }
 
-        public void GetEmployee(int id)
+        public Employee GetEmployee(int id)
         {
-
+            foreach (Employee emp in employeesList)
+            {
+                if (emp.Id == id)
+                {
+                    return emp;
+                }
+            }
+            return null;
         }
 
-        public void UpdateEpmloyee(int id)
+        public void UpdateEmployee(int id, string field, string newValue)
         {
-
+            Employee employeeToUpdate = GetEmployee(id);
+            if (employeeToUpdate != null)
+            {
+                switch (field.ToLower())
+                {
+                    case "firstname":
+                        employeeToUpdate.FirstName = newValue;
+                        break;
+                    case "lastname":
+                        employeeToUpdate.LastName = newValue;
+                        break;
+                    case "salary":
+                        if (decimal.TryParse(newValue, out decimal newSalary))
+                        {
+                            employeeToUpdate.Salary = newSalary;
+                        }
+                        else
+                        {
+                            Console.WriteLine("Некорректное значение для зарплаты.");
+                            return;
+                        }
+                        break;
+                    default:
+                        Console.WriteLine("Некорректное поле для обновления.");
+                        return;
+                }
+                SaveEmployeesToFile();
+                Console.WriteLine($"Сотрудник с ID - {id} успешно обновлён.");
+            }
+            else
+            {
+                Console.WriteLine($"Сотрудник с ID - {id} не найден.");
+            }
         }
 
         public void ShowAllEmployees()
         {
+            Console.WriteLine("Список всех сотрудников:");
+            foreach (Employee emp in employeesList)
+            {
+                Console.WriteLine($"ID: {emp.Id}, Имя: {emp.FirstName}, Фамилия: {emp.LastName}, Зарплата: {emp.Salary}");
+            }
+        }
 
+        public int GetNextFreeId()
+        {
+            int id = 1;
+            HashSet<int> usedIds = new HashSet<int>();
+            foreach (Employee emp in employeesList)
+            {
+                usedIds.Add(emp.Id);
+            }
+            while (usedIds.Contains(id))
+            {
+                id++;
+            }
+            return id;
         }
     }
 }
